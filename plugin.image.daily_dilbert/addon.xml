@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.image.daily_dilbert" name="Daily Dilbert" version="0.9.1" provider-name="BigCookie">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="addon.py">
+        <provides>image</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en">Display Dilbert comic strips!</summary>
+        <description lang="en">This Dilbert Kodi plugin displays the daily Dilbert comic strip, random Dilbert comic strip, recent comic strips or comic date on your input. Additionally you can browse by date all strips available.\nThanks to the creator of the Dilbert Plugin and Garfield Comic Plugin, which I took as basis for this plugin.</description>
+        <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
+        <language/>
+        <email>bigcookie@@fantasymail.de</email>
+    </extension>
+</addon>
