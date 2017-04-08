@@ -9,15 +9,10 @@
 # Desires: I would like to add images to the directories including thumbnails to allow right/left key browsing, but performance was too low. Any ideas to improve are welcome.
 #
 
-import urllib2,os,re,sys,datetime,xbmc,xbmcgui,xbmcaddon,xbmcplugin
-from t0mm0.common.addon import Addon	# want to get rid of this to save imports
+import urllib,urllib2,os,re,sys,datetime,xbmc,xbmcgui,xbmcaddon,xbmcplugin
 from calendar import monthrange
 from urlparse import parse_qs
 from random import randint, randrange
-
-# Want to get rid of this - inherited from Garfield Plugin).
-# Also want to replace Addon().add_item() (used later on)
-addon = Addon('plugin.image.daily_dilbert', sys.argv)
 
 ### Global variables ###
 # I dont like global variables, but in this case it is easier/faster for me.
@@ -30,6 +25,7 @@ g_Args_Year = g_Args['year'][0] if 'year' in g_Args else "";
 g_Args_Month= g_Args['month'][0] if 'month' in g_Args else "";
 g_Args_Day = g_Args['day'][0] if 'day' in g_Args else "";
 g_Args_Page = g_Args['page'][0] if 'page' in g_Args else "";
+g_Args_URL = sys.argv[0]
 g_CacheDir = g_AddonPath + "/cache/"									# Where to we store cached scraped Dilbert URLs
 g_Now = datetime.date.today()											# Today
 
@@ -60,20 +56,54 @@ g_FanartImage[5]= g_AddonPath + "/resources/media/fanart6.jpg"			# For "By Date"
 
 
 ### SubRoutines ###
-def add_image(image):
-	# This function comes from Garfield plugin (thanks!) and adds an image item to the directory
-    item = xbmcgui.ListItem(image['name'])
-    item.setArt({'thumb': image['thumb_url'],
-    			'fanart':fanart_image})
-    item.setInfo(
-        type='pictures',
-        infoLabels={
-            "title": image['name'],
-            "picturepath": image['url'],
-            "exif:path": image['url']
-        }
-    )
-    xbmcplugin.addDirectoryItem(g_AddonHandle, image['url'], item)
+#def build_url(query):
+#	return xbmcaddon.Addon().url + '?' + urllib.urlencode(query)
+
+def build_url(queries):
+	'''
+	Returns a ``plugin://`` URL which can be used to call the addon with 
+	the specified queries.
+	Example:
+
+	>>> addon.build_plugin_url({'name': 'test', 'type': 'basic'})
+	'plugin://your.plugin.id/?name=test&type=basic'
+
+	Args:
+		queries (dict): A dctionary of keys/values to be added to the 
+		``plugin://`` URL.
+
+	R*etuns:
+		A string containing a fully formed ``plugin://`` URL.
+	'''
+	out_dict = {}
+	for k, v in queries.iteritems():
+		if isinstance(v, unicode):
+			v = v.encode('utf8')
+		elif isinstance(v, str):
+			# Must be encoded in UTF-8
+			v.decode('utf8')
+		out_dict[k] = v
+	return g_Args_URL + '?' + urllib.urlencode(out_dict)	
+	
+def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fanart=''):
+	url = build_url({'mode': mode, 'foldername': name, 'page': page, 'year': year, 'month': month, 'day': day})
+	li = xbmcgui.ListItem(name, iconImage=icon)
+	xbmcplugin.addDirectoryItem(handle=g_AddonHandle, url=url, listitem=li, isFolder=True)
+
+#def add_image(image):
+#	# This function comes from Garfield plugin (thanks!) and adds an image item to the directory
+#    item = xbmcgui.ListItem(image['name'])
+#    item.setArt({'thumb': image['thumb_url'],
+#    			'fanart':fanart_image})
+#    item.setInfo(
+#        type='pictures',
+#        infoLabels={
+#            "title": image['name'],
+#            "picturepath": image['url'],
+#            "exif:path": image['url']
+#        }
+#    )
+#    xbmcplugin.addDirectoryItem(g_AddonHandle, image['url'], item)
 
 def read_cache(date):
 	# Reads a cached scraped URL if existent
@@ -118,9 +148,9 @@ def get_image_url(date):
 			response.close()
 			del response
 		except:
-			msg=['''Couldn't scrape Dilbert webpage for the date '''+str(date.year)+'/'+str(date.month)+'/'+str(date.day)+'''. Please check your internet connection.''','''To be sure try http://www.dilbert.com/strip/1989-04-16 if the webpage is still alive.''']
+			msg=[xbmcaddon.Addon().getname() + ''': Couldn't scrape Dilbert webpage for the date '''+str(date.year)+'/'+str(date.month)+'/'+str(date.day)+'''. Please check your internet connection.''','''To be sure try http://www.dilbert.com/strip/1989-04-16 if the webpage is still alive.''']
 			xbmcaddon.Addon().log(msg, xbmc.LOGERROR)
-			addon.show_error_dialog(msg)
+			xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
 			sys.exit(1)
 		match=g_Pattern.search(page)
 		if match:
@@ -138,11 +168,11 @@ def create_random_date(starting_date, ending_date):
 
 def create_mainmenu():
 	# Main menu of the plugin
-	addon.add_item({'mode': 'today'}, {'title':'Today\'s Dilbert'}, img=g_Icons['today'], fanart=g_FanartImage[1],is_folder=True)
-	addon.add_item({'mode': 'last_week','page':'1'}, {'title':'Recent Dilberts'}, img=g_Icons['recent'], fanart=g_FanartImage[2],is_folder=True)
-	addon.add_item({'mode': 'random'}, {'title':'Random Dilbert'}, img=g_Icons['random'], fanart=g_FanartImage[3],is_folder=True)
-	addon.add_item({'mode': 'browse','page':'1'}, {'title':'Browse dates'}, img=g_Icons['browse'], fanart=g_FanartImage[4],is_folder=True)
-	addon.add_item({'mode': 'enter'}, {'title':'Open a specific date'}, img=g_Icons['date'], fanart=g_FanartImage[5],is_folder=True)
+	add_directory(mode='today', name='Today\'s Dilbert',icon=g_Icons['today'], fanart=g_FanartImage[1])
+	add_directory(mode='last_week',page='1',name='Recent Dilberts',icon=g_Icons['recent'], fanart=g_FanartImage[2])
+	add_directory(mode='random',name='Random Dilberts',icon=g_Icons['random'], fanart=g_FanartImage[3])
+	add_directory(mode='browse',page='1',name='Browse Dates',icon=g_Icons['browse'], fanart=g_FanartImage[4])
+	add_directory(mode='enter',name='Open a specific date',icon=g_Icons['date'], fanart=g_FanartImage[5])
 	xbmcplugin.endOfDirectory(g_AddonHandle)
 
 def check_cachedirectory():
@@ -153,7 +183,7 @@ def check_cachedirectory():
 		try:
 			os.makedirs(g_CacheDir)
 		except:
-			msg=['Cache directory \"' + g_CacheDir + '\" could not be created. No cache will be used even though it is enabled...']
+			msg=[xbmcaddon.Addon().getname() + ': Cache directory \"' + g_CacheDir + '\" could not be created. No cache will be used even though it is enabled...']
 			xbmcaddon.Addon().log(msg, xbmc.LOGERROR)
 			return False
 	return True
@@ -172,11 +202,11 @@ def select_lastweek(date,fanart_image):
 	for i in range(g_PageItems):
 		date=date-datetime.timedelta(days=1)
 		if date > g_FirstDilbert:
-			addon.add_item({'mode': 'browse','year':date.year,'month':date.month,'day':date.day},{'title':'%04d-%02d-%02d'%(date.year,date.month,date.day)}, img=g_Icons['click'], fanart=fanart_image,is_folder=True)
+			add_directory(mode='last_week',year=date.year,month=date.month,day=date.day,name='%04d-%02d-%02d'%(date.year,date.month,date.day),icon=g_Icons['click'], fanart=fanart_image)
 		else:
 			break
 	title='Next ' + str(g_PageItems) + ' comic strips... >>'
-	addon.add_item({'mode': 'last_week','page':'%s'%(int(g_Args_Page)+1)}, {'title':title}, img=g_Icons['next'], fanart=fanart_image,is_folder=True)
+	add_directory(mode='last_week',page='%s'%(int(g_Args_Page)+1),name=title,icon=g_Icons['next'], fanart=fanart_image)
 	xbmcplugin.endOfDirectory(g_AddonHandle,cacheToDisc=False)
 
 def select_random(date,fanart_image):
@@ -192,10 +222,11 @@ def select_random(date,fanart_image):
 		title='Load another ' + str(g_PageItemsRandom) + ' random comic strips:'
 	else:
 		title='Load another random comic strip:'
-	addon.add_item({'mode': 'random'}, {'title':title}, img=g_Icons['random'], fanart=fanart_image,is_folder=True)
+	add_directory(mode='random',name=title,icon=g_Icons['random'], fanart=fanart_image)
 	for i in range(g_PageItemsRandom):
 		random_date = create_random_date(g_FirstDilbert, g_Now)
-		addon.add_item({'mode': 'browse','year':random_date.year,'month':random_date.month,'day':random_date.day},{'title':'%04d-%02d-%02d'%(random_date.year,random_date.month,random_date.day)}, img=g_Icons['click'], fanart=fanart_image,is_folder=True)
+		title='%04d-%02d-%02d'%(random_date.year,random_date.month,random_date.day)
+		add_directory(mode='random',year=random_date.year,month=random_date.month, day=random_date.day,name=title,icon=g_Icons['click'], fanart=fanart_image)
 
 	xbmcplugin.endOfDirectory(g_AddonHandle)
 
@@ -204,8 +235,7 @@ def select_browse(fanart_image):
 	# Due to time needed for scraping, the comic strip URL is scraped on selection and no thumbnails are shown. This prevents unfortunately browsing with the arrow keys...
 	if g_Args_Day:
 		date=datetime.date(int(g_Args_Year),int(g_Args_Month),int(g_Args_Day))
-		image_url= get_image_url(date)
-		xbmc.executebuiltin("ShowPicture(%s)"%image_url)
+		show_image(date)
 	elif g_Args_Month:
 		day_range_end = g_Now.day+1 if (int(g_Args_Year) == g_Now.year and int(g_Args_Month) == g_Now.month) else monthrange(int(g_Args_Year),int(g_Args_Month))[1]+1
 		day_range_start = 16 if (int(g_Args_Year) == 1989 and int(g_Args_Month) == 4) else 1
@@ -216,7 +246,8 @@ def select_browse(fanart_image):
 				title_addon = ' (First Dilbert online available)'
 			else:
 				title_addon = ""
-			addon.add_item({'mode': 'browse','year':g_Args_Year,'month':g_Args_Month,'day':i},{'title':'%s'%i + title_addon}, img=g_Icons['click'], fanart=fanart_image,is_folder=True)
+			title='%s'%i + title_addon
+			add_directory(mode='browse',year=g_Args_Year,month=g_Args_Month, day=i,name=title,icon=g_Icons['click'], fanart=fanart_image)
 		xbmcplugin.endOfDirectory(g_AddonHandle)
 	elif g_Args_Year:
 		month_range_end = g_Now.month+1 if (int(g_Args_Year) == g_Now.year) else 12+1
@@ -224,11 +255,11 @@ def select_browse(fanart_image):
 		for i in range(month_range_start,month_range_end,1):
 			title= datetime.date(int(g_Args_Year),int(i),1)
 			title=title.strftime("%B") #+ ' %s'%i
-			addon.add_item({'mode': 'browse','year':g_Args_Year,'month':i},{'title':title}, img=g_Icons['next'], fanart=fanart_image,is_folder=True)
+			add_directory(mode='browse',year=g_Args_Year,month=i,name=title,icon=g_Icons['next'], fanart=fanart_image)
 		xbmcplugin.endOfDirectory(g_AddonHandle)
 	else:
 		for i in range(g_Now.year,g_FirstDilbert.year-1,-1):
-			addon.add_item({'mode': 'browse','year':'%4d'%i},{'title':'%s'%i}, img=g_Icons['next'], fanart=fanart_image,is_folder=True)
+			add_directory(mode='browse',year='%4d'%i,name='%s'%i,icon=g_Icons['next'], fanart=fanart_image)
 		xbmcplugin.endOfDirectory(g_AddonHandle)
 
 def select_date(date):
@@ -243,16 +274,16 @@ def select_date(date):
 			entered_date = datetime.date(int(year),int(month),int(day))
 			if entered_date > date:
 				msg=['You hit the future.\nYour entered date '+year+'/'+month+'/'+day+' is out of range!!!']
-				addon.show_error_dialog(msg)
+				xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
 			elif entered_date < g_FirstDilbert:
 				msg=['Too far back in time. Your entered date '+year+'/'+month+'/'+day+' is out of range!\nThe first electronically avialbale Dilbert is from '+str(g_FirstDilbert.year)+'/'+str(g_FirstDilbert.month)+'/'+str(g_FirstDilbert.day)+' !']
-				addon.show_error_dialog(msg)
+				xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
 			else:
 				image_url = get_image_url(entered_date)
 				xbmc.executebuiltin("ShowPicture(%s)"%image_url)
 		except (TypeError,ValueError):
 			msg=['Please enter the date in the correct format \"yyyy/mm/dd\" !']
-			addon.show_error_dialog(msg)
+			xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
 			sys.exit(1)
 	else:
 		return
@@ -266,7 +297,7 @@ def show_image(date):
 		return False
 
 ### Main program start ###
-xbmcplugin.setContent(g_AddonHandle, 'pictures')
+#xbmcplugin.setContent(g_AddonHandle, 'pictures')
 # Check for Cache
 g_UseCache=check_cachedirectory()
 # Show menus
