@@ -56,54 +56,13 @@ g_FanartImage[5]= g_AddonPath + "/resources/media/fanart6.jpg"			# For "By Date"
 
 
 ### SubRoutines ###
-#def build_url(query):
-#	return xbmcaddon.Addon().url + '?' + urllib.urlencode(query)
-
-def build_url(queries):
-	'''
-	Returns a ``plugin://`` URL which can be used to call the addon with 
-	the specified queries.
-	Example:
-
-	>>> addon.build_plugin_url({'name': 'test', 'type': 'basic'})
-	'plugin://your.plugin.id/?name=test&type=basic'
-
-	Args:
-		queries (dict): A dctionary of keys/values to be added to the 
-		``plugin://`` URL.
-
-	R*etuns:
-		A string containing a fully formed ``plugin://`` URL.
-	'''
-	out_dict = {}
-	for k, v in queries.iteritems():
-		if isinstance(v, unicode):
-			v = v.encode('utf8')
-		elif isinstance(v, str):
-			# Must be encoded in UTF-8
-			v.decode('utf8')
-		out_dict[k] = v
-	return g_Args_URL + '?' + urllib.urlencode(out_dict)	
+def build_url(query):
+	return g_Args_URL + '?' + urllib.urlencode(query)
 	
 def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fanart=''):
 	url = build_url({'mode': mode, 'foldername': name, 'page': page, 'year': year, 'month': month, 'day': day})
 	li = xbmcgui.ListItem(name, iconImage=icon)
 	xbmcplugin.addDirectoryItem(handle=g_AddonHandle, url=url, listitem=li, isFolder=True)
-
-#def add_image(image):
-#	# This function comes from Garfield plugin (thanks!) and adds an image item to the directory
-#    item = xbmcgui.ListItem(image['name'])
-#    item.setArt({'thumb': image['thumb_url'],
-#    			'fanart':fanart_image})
-#    item.setInfo(
-#        type='pictures',
-#        infoLabels={
-#            "title": image['name'],
-#            "picturepath": image['url'],
-#            "exif:path": image['url']
-#        }
-#    )
-#    xbmcplugin.addDirectoryItem(g_AddonHandle, image['url'], item)
 
 def read_cache(date):
 	# Reads a cached scraped URL if existent
@@ -297,7 +256,7 @@ def show_image(date):
 		return False
 
 ### Main program start ###
-#xbmcplugin.setContent(g_AddonHandle, 'pictures')
+
 # Check for Cache
 g_UseCache=check_cachedirectory()
 # Show menus
