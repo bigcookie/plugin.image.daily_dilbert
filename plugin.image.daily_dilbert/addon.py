@@ -10,6 +10,7 @@
 #
 
 import urllib,urllib2,os,re,sys,datetime,xbmc,xbmcgui,xbmcaddon,xbmcplugin
+import pickle 
 from calendar import monthrange
 from urlparse import parse_qs
 from random import randint, randrange
@@ -19,6 +20,7 @@ from random import randint, randrange
 # global variables including used Kodi arguments, which are not supposed to be changed or altered
 g_AddonHandle = int(sys.argv[1])
 g_AddonPath = xbmcaddon.Addon().getAddonInfo('path')
+g_AddonName = xbmcaddon.Addon().getAddonInfo('name')
 g_Args = parse_qs(sys.argv[2][1:])
 g_Args_Mode = g_Args.get('mode', None)
 g_Args_Year = g_Args['year'][0] if 'year' in g_Args else "";
@@ -37,6 +39,9 @@ g_PageItemsRandom = 7													# items to be loaded/pre-scraped in random men
 g_BaseUrl = "http://www.dilbert.com/strip/"								# Base URL, date will be added in form .../strip/yyy-mm-dd to get according Dilbert webpage
 g_Pattern = re.compile('"(http://assets.amuniversal.com/[a-z0-9]+)"')	# Pattern to search on Dilberts webpage
 g_FirstDilbert = datetime.date(1989,4,16) 								# 1. Dilbert online available on 16.4.1989, required for date checks
+g_cachemodefile='lastmode.cache'
+g_cacherandompagefile='randomlastpage.cache'
+g_cacherandomdates='randomdates.cache'
 ### Dilbert icons and fanart
 g_Icons={}
 g_Icons['today'] = g_AddonPath + "/resources/media/dil_today.png"
@@ -66,32 +71,52 @@ def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fan
 
 def read_cache(date):
 	# Reads a cached scraped URL if existent
-	cache_file=os.path.join(g_CacheDir + date.strftime('%Y-%m-%d') + '.link')
-	if os.path.isfile(cache_file):
-		try:
-			text_file = open(cache_file, "r")
-			url=text_file.read()
-			text_file.close()
-		except:
-			return ""
-		return url
-	else:
-		return ""
+	filename=date.strftime('%Y-%m-%d') + '.link'
+	return get_cacheddata(filename)
 
 def write_cache(date,url):
 	# Writes a scraped URL to the cache directory
-	cache_file=os.path.join(g_CacheDir + date.strftime('%Y-%m-%d') + '.link')
-	if not os.path.isfile(cache_file):
+	filename=date.strftime('%Y-%m-%d') + '.link'
+	return set_cacheddata(url,filename)
+
+def get_cacheddata(filename):
+	# Reads a cached data from file if existent
+	# filename: lastmode/lastpage
+	cache_file=os.path.join(g_CacheDir + filename)
+	if os.path.isfile(cache_file):
 		try:
-			text_file = open(cache_file, "w")
-			text_file.write(url)
+			text_file = open(cache_file, "r")
+			data=text_file.read()
 			text_file.close()
 		except:
-			return False
-		return True
+			return ""
+		return data
 	else:
+		return ""
+		
+def set_cacheddata(param,filename):
+	# Writes a data to the cache directory
+	# filename: lastmode(lastpage)
+	cache_file=os.path.join(g_CacheDir + filename)
+	try:
+		text_file = open(cache_file, "w")
+		text_file.write(param)
+		text_file.close()
+		return True	
+	except:
 		return False
 
+def delete_cachefile(filename):
+	file=os.path.join(g_CacheDir + filename)
+	if os.path.isfile(file):
+		try:
+			os.remove(file)
+			return True
+		except:
+			return False
+	else:
+		return False
+		
 def get_image_url(date):
 	# Scrapes Dilbert website for URL to get according Dilbert comic strip from given date.
 	# Can be used with or without caching function (controlled by g_UseCache).
@@ -109,7 +134,7 @@ def get_image_url(date):
 		except:
 			msg=[xbmcaddon.Addon().getname() + ''': Couldn't scrape Dilbert webpage for the date '''+str(date.year)+'/'+str(date.month)+'/'+str(date.day)+'''. Please check your internet connection.''','''To be sure try http://www.dilbert.com/strip/1989-04-16 if the webpage is still alive.''']
 			xbmcaddon.Addon().log(msg, xbmc.LOGERROR)
-			xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
+			xbmcgui.Dialog().ok('Error: ' + g_AddonName, str(msg[0]))
 			sys.exit(1)
 		match=g_Pattern.search(page)
 		if match:
@@ -129,7 +154,7 @@ def create_mainmenu():
 	# Main menu of the plugin
 	add_directory(mode='today', name='Today\'s Dilbert',icon=g_Icons['today'], fanart=g_FanartImage[1])
 	add_directory(mode='last_week',page='1',name='Recent Dilberts',icon=g_Icons['recent'], fanart=g_FanartImage[2])
-	add_directory(mode='random',name='Random Dilberts',icon=g_Icons['random'], fanart=g_FanartImage[3])
+	add_directory(mode='random',page='1',name='Random Dilberts',icon=g_Icons['random'], fanart=g_FanartImage[3])
 	add_directory(mode='browse',page='1',name='Browse Dates',icon=g_Icons['browse'], fanart=g_FanartImage[4])
 	add_directory(mode='enter',name='Open a specific date',icon=g_Icons['date'], fanart=g_FanartImage[5])
 	xbmcplugin.endOfDirectory(g_AddonHandle)
@@ -142,7 +167,7 @@ def check_cachedirectory():
 		try:
 			os.makedirs(g_CacheDir)
 		except:
-			msg=[xbmcaddon.Addon().getname() + ': Cache directory \"' + g_CacheDir + '\" could not be created. No cache will be used even though it is enabled...']
+			msg=[g_AddonName + ': Cache directory \"' + g_CacheDir + '\" could not be created. No cache will be used even though it is enabled...']
 			xbmcaddon.Addon().log(msg, xbmc.LOGERROR)
 			return False
 	return True
@@ -152,7 +177,7 @@ def select_lastweek(date,fanart_image):
 	# g_PageItems configures the strips shown per page
 	# Due to performance, we dont pre-scrape and show thumbnails. Strip is shown on click - though no browsing with the arrow keys possible.
 	if g_Args_Year and g_Args_Month and g_Args_Day:
-		date=date(g_Args_Year,g_Args_Month,g_Args_Day)
+		date=datetime.date(int(g_Args_Year),int(g_Args_Month),int(g_Args_Day))
 		show_image(date)
 		return
 
@@ -171,24 +196,35 @@ def select_lastweek(date,fanart_image):
 def select_random(date,fanart_image):
 	# This function builds the menu for displaying random Dilbert comic strips.
 	# g_PageItemsRandom controls the items shown per page.
-	# You can reload a new set of random strips easily without going deeper into the folder structure.
+	
+	# If date was selected, show strip
 	if g_Args_Year and g_Args_Month and g_Args_Day:
-		date=date(g_Args_Year,g_Args_Month,g_Args_Day)
+		date=datetime.date(int(g_Args_Year),int(g_Args_Month),int(g_Args_Day))
 		show_image(date)
 		return
-
-	if g_PageItemsRandom > 1:
-		title='Load another ' + str(g_PageItemsRandom) + ' random comic strips:'
+		
+	# Handle a cache, as otherwise after showing a strip and coming back the list would be refreshed.
+	datelist=[]
+	if get_cacheddata(g_cachemodefile)=='random':
+		datelist=pickle.load(open(g_CacheDir+g_cacherandomdates,"r"))
 	else:
-		title='Load another random comic strip:'
-	add_directory(mode='random',name=title,icon=g_Icons['random'], fanart=fanart_image)
-	for i in range(g_PageItemsRandom):
-		random_date = create_random_date(g_FirstDilbert, g_Now)
+		datelist=create_randomdatelist(g_PageItemsRandom)
+		pickle.dump(datelist,open(g_CacheDir+g_cacherandomdates,"wb"))
+		
+	# create directory items for random dates
+	for i in range(0,len(datelist)):
+		random_date = datelist[i]
 		title='%04d-%02d-%02d'%(random_date.year,random_date.month,random_date.day)
 		add_directory(mode='random',year=random_date.year,month=random_date.month, day=random_date.day,name=title,icon=g_Icons['click'], fanart=fanart_image)
-
 	xbmcplugin.endOfDirectory(g_AddonHandle)
 
+def create_randomdatelist(number):
+	datelist=[]
+	for i in range(number):
+		random_date = create_random_date(g_FirstDilbert, g_Now)
+		datelist.append(random_date)
+	return datelist
+		
 def select_browse(fanart_image):
 	# This function builds the folder structure for browsing by date.
 	# Due to time needed for scraping, the comic strip URL is scraped on selection and no thumbnails are shown. This prevents unfortunately browsing with the arrow keys...
@@ -233,16 +269,16 @@ def select_date(date):
 			entered_date = datetime.date(int(year),int(month),int(day))
 			if entered_date > date:
 				msg=['You hit the future.\nYour entered date '+year+'/'+month+'/'+day+' is out of range!!!']
-				xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
+				xbmcgui.Dialog().ok('Error: '+g_AddonName, str(msg[0]))
 			elif entered_date < g_FirstDilbert:
 				msg=['Too far back in time. Your entered date '+year+'/'+month+'/'+day+' is out of range!\nThe first electronically avialbale Dilbert is from '+str(g_FirstDilbert.year)+'/'+str(g_FirstDilbert.month)+'/'+str(g_FirstDilbert.day)+' !']
-				xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
+				xbmcgui.Dialog().ok('Error: '+g_AddonName, str(msg[0]))
 			else:
 				image_url = get_image_url(entered_date)
 				xbmc.executebuiltin("ShowPicture(%s)"%image_url)
 		except (TypeError,ValueError):
 			msg=['Please enter the date in the correct format \"yyyy/mm/dd\" !']
-			xbmcaddon.Addon().show_ok_dialog(msg, 'Error: %s' % xbmcaddon.Addon().get_name(), True)
+			xbmcgui.Dialog().ok('Error: '+g_AddonName, str(msg[0]))
 			sys.exit(1)
 	else:
 		return
@@ -255,6 +291,14 @@ def show_image(date):
 	else:
 		return False
 
+def cache_mode():
+	# Handle last mode for random cache handling
+	if g_Args_Mode:	
+		set_cacheddata(g_Args_Mode[0],g_cachemodefile)
+	else:
+		delete_cachefile(g_cachemodefile)
+	return True
+	
 ### Main program start ###
 
 # Check for Cache
@@ -272,3 +316,5 @@ elif g_Args_Mode[0]=='browse':
 	select_browse(g_FanartImage[4])
 elif g_Args_Mode[0]=='enter':
 	select_date(g_Now)
+
+cache_mode()
