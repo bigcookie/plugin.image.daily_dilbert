@@ -43,20 +43,20 @@ g_cachemodefile='lastmode.cache'
 g_cacherandomdates='randomdates.cache'
 ### Dilbert icons and fanart
 g_Icons={}
-g_Icons['today'] = g_AddonPath + "/resources/media/dil_today.png"
-g_Icons['recent'] = g_AddonPath + "/resources/media/dil_recent.png"
-g_Icons['random'] = g_AddonPath + "/resources/media/dil_random.png"
-g_Icons['date'] = g_AddonPath + "/resources/media/dil_bydate.png"
-g_Icons['browse'] = g_AddonPath + "/resources/media/dil_browse.png"
-g_Icons['next'] = g_AddonPath + "/resources/media/dil_next.png"
-g_Icons['click'] = g_AddonPath + "/resources/media/dil_click2show.png"	# For necessary click action to show strip as no preview is available
+g_Icons['today'] = os.path.join(g_AddonPath, "resources/media/dil_today.png")
+g_Icons['recent'] = os.path.join(g_AddonPath, "resources/media/dil_recent.png")
+g_Icons['random'] = os.path.join(g_AddonPath, "resources/media/dil_random.png")
+g_Icons['date'] = os.path.join(g_AddonPath, "resources/media/dil_bydate.png")
+g_Icons['browse'] = os.path.join(g_AddonPath, "resources/media/dil_browse.png")
+g_Icons['next'] = os.path.join(g_AddonPath, "resources/media/dil_next.png")
+g_Icons['click'] = os.path.join(g_AddonPath, "resources/media/dil_click2show.png")	# For necessary click action to show strip as no preview is available
 g_FanartImage=["","","","","",""]
-g_FanartImage[0]= g_AddonPath + "/resources/media/fanart1.jpg"			# Unused for now
-g_FanartImage[1]= g_AddonPath + "/resources/media/fanart2.jpg"			# For "Today"
-g_FanartImage[2]= g_AddonPath + "/resources/media/fanart3.jpg"			# For "Random"
-g_FanartImage[3]= g_AddonPath + "/resources/media/fanart4.jpg"			# For "Recent"
-g_FanartImage[4]= g_AddonPath + "/resources/media/fanart5.jpg"			# For "Browse"
-g_FanartImage[5]= g_AddonPath + "/resources/media/fanart6.jpg"			# For "By Date"
+g_FanartImage[0]= os.path.join(g_AddonPath, "resources/media/fanart1.jpg")			# Unused for now
+g_FanartImage[1]= os.path.join(g_AddonPath, "resources/media/fanart2.jpg")			# For "Today"
+g_FanartImage[2]= os.path.join(g_AddonPath, "resources/media/fanart3.jpg")			# For "Random"
+g_FanartImage[3]= os.path.join(g_AddonPath, "resources/media/fanart4.jpg")			# For "Recent"
+g_FanartImage[4]= os.path.join(g_AddonPath, "resources/media/fanart5.jpg")			# For "Browse"
+g_FanartImage[5]= os.path.join(g_AddonPath, "resources/media/fanart6.jpg")			# For "By Date"
 
 
 ### SubRoutines ###
