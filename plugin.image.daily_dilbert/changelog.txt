@@ -1,7 +1,10 @@
-v1.1.1 [13-Apr-2017]
+v1.1.2 [13-Apr-2017]
 - Added disclaimer
-- replaced whitespace indents with tabs
-- Fixed language definition in addon.xml
+- made code Kodi style compliant
+  - replaced whitespace indents with tabs
+  - Fixed language definition in addon.xml
+  - removed use of deprecated Kodi functions (listitem -> iconimage)
+  - added with statement to IO
 
 v1.1 [10-Apr-2017]
 - redid random pages and introduced cache to not lose the list after showing a random strip
