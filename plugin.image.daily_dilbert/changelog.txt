@@ -1,3 +1,8 @@
+v1.1.1 [13-Apr-2017]
+- Added disclaimer
+- replaced whitespace indents with tabs
+- Fixed language definition in addon.xml
+
 v1.1 [10-Apr-2017]
 - redid random pages and introduced cache to not lose the list after showing a random strip
 - removed reload button in random date menu
