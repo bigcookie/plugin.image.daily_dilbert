@@ -28,7 +28,7 @@ g_Args_Month= g_Args['month'][0] if 'month' in g_Args else "";
 g_Args_Day = g_Args['day'][0] if 'day' in g_Args else "";
 g_Args_Page = g_Args['page'][0] if 'page' in g_Args else "";
 g_Args_URL = sys.argv[0]
-g_CacheDir = g_AddonPath + "/cache/"									# Where to we store cached scraped Dilbert URLs
+g_CacheDir = os.path.join(g_AddonPath, "cache/")									# Where to we store cached scraped Dilbert URLs
 g_Now = datetime.date.today()											# Today
 
 ### Dilbert Settings ###
@@ -65,7 +65,8 @@ def build_url(query):
 
 def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fanart=''):
 	url = build_url({'mode': mode, 'foldername': name, 'page': page, 'year': year, 'month': month, 'day': day})
-	li = xbmcgui.ListItem(name, iconImage=icon)
+	li = xbmcgui.ListItem(name)
+	li.setIconImage(icon)
 	xbmcplugin.addDirectoryItem(handle=g_AddonHandle, url=url, listitem=li, isFolder=True)
 
 def read_cache(date):
@@ -81,12 +82,11 @@ def write_cache(date,url):
 def get_cacheddata(filename):
 	# Reads a cached data from file if existent
 	# filename: lastmode/lastpage
-	cache_file=os.path.join(g_CacheDir + filename)
+	cache_file=os.path.join(g_CacheDir, filename)
 	if os.path.isfile(cache_file):
 		try:
-			text_file = open(cache_file, "r")
-			data=text_file.read()
-			text_file.close()
+			with open(cache_file, "r") as file:
+				data=file.read()
 		except:
 			return ""
 		return data
@@ -98,15 +98,14 @@ def set_cacheddata(param,filename):
 	# filename: lastmode(lastpage)
 	cache_file=os.path.join(g_CacheDir + filename)
 	try:
-		text_file = open(cache_file, "w")
-		text_file.write(param)
-		text_file.close()
+		with open(cache_file, "w") as file:
+			file.write(param)
 		return True
 	except:
 		return False
 
 def delete_cachefile(filename):
-	file=os.path.join(g_CacheDir + filename)
+	file=os.path.join(g_CacheDir, filename)
 	if os.path.isfile(file):
 		try:
 			os.remove(file)
@@ -131,7 +130,7 @@ def get_image_url(date):
 			response.close()
 			del response
 		except:
-			msg=[xbmcaddon.Addon().getname() + ''': Couldn't scrape Dilbert webpage for the date '''+str(date.year)+'/'+str(date.month)+'/'+str(date.day)+'''. Please check your internet connection.''','''To be sure try http://www.dilbert.com/strip/1989-04-16 if the webpage is still alive.''']
+			msg=[g_AddonName + ''': Couldn't scrape Dilbert webpage for the date '''+str(date.year)+'/'+str(date.month)+'/'+str(date.day)+'''. Please check your internet connection.''','''To be sure try http://www.dilbert.com/strip/1989-04-16 if the webpage is still alive.''']
 			xbmcaddon.Addon().log(msg, xbmc.LOGERROR)
 			xbmcgui.Dialog().ok('Error: ' + g_AddonName, str(msg[0]))
 			sys.exit(1)
