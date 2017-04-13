@@ -40,7 +40,6 @@ g_BaseUrl = "http://www.dilbert.com/strip/"								# Base URL, date will be adde
 g_Pattern = re.compile('"(http://assets.amuniversal.com/[a-z0-9]+)"')	# Pattern to search on Dilberts webpage
 g_FirstDilbert = datetime.date(1989,4,16) 								# 1. Dilbert online available on 16.4.1989, required for date checks
 g_cachemodefile='lastmode.cache'
-g_cacherandompagefile='randomlastpage.cache'
 g_cacherandomdates='randomdates.cache'
 ### Dilbert icons and fanart
 g_Icons={}
@@ -63,7 +62,7 @@ g_FanartImage[5]= g_AddonPath + "/resources/media/fanart6.jpg"			# For "By Date"
 ### SubRoutines ###
 def build_url(query):
 	return g_Args_URL + '?' + urllib.urlencode(query)
-	
+
 def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fanart=''):
 	url = build_url({'mode': mode, 'foldername': name, 'page': page, 'year': year, 'month': month, 'day': day})
 	li = xbmcgui.ListItem(name, iconImage=icon)
@@ -93,7 +92,7 @@ def get_cacheddata(filename):
 		return data
 	else:
 		return ""
-		
+
 def set_cacheddata(param,filename):
 	# Writes a data to the cache directory
 	# filename: lastmode(lastpage)
@@ -102,7 +101,7 @@ def set_cacheddata(param,filename):
 		text_file = open(cache_file, "w")
 		text_file.write(param)
 		text_file.close()
-		return True	
+		return True
 	except:
 		return False
 
@@ -116,7 +115,7 @@ def delete_cachefile(filename):
 			return False
 	else:
 		return False
-		
+
 def get_image_url(date):
 	# Scrapes Dilbert website for URL to get according Dilbert comic strip from given date.
 	# Can be used with or without caching function (controlled by g_UseCache).
@@ -146,9 +145,9 @@ def get_image_url(date):
 
 def create_random_date(starting_date, ending_date):
 	# Creates a random date between a starting and an end date
-    date_delta = ending_date - starting_date
-    random_days = randrange(date_delta.days)
-    return starting_date + datetime.timedelta(days=random_days)
+	date_delta = ending_date - starting_date
+	random_days = randrange(date_delta.days)
+	return starting_date + datetime.timedelta(days=random_days)
 
 def create_mainmenu():
 	# Main menu of the plugin
@@ -182,10 +181,10 @@ def select_lastweek(date,fanart_image):
 		return
 
 	days_offset = g_PageItems * (int(g_Args_Page)-1)
-	date  = date - datetime.timedelta(days=(days_offset))
+	date = date - datetime.timedelta(days=(days_offset))
 	for i in range(g_PageItems):
 		date=date-datetime.timedelta(days=1)
-		if date > g_FirstDilbert:
+		if date >= g_FirstDilbert:
 			add_directory(mode='last_week',year=date.year,month=date.month,day=date.day,name='%04d-%02d-%02d'%(date.year,date.month,date.day),icon=g_Icons['click'], fanart=fanart_image)
 		else:
 			break
@@ -196,13 +195,13 @@ def select_lastweek(date,fanart_image):
 def select_random(date,fanart_image):
 	# This function builds the menu for displaying random Dilbert comic strips.
 	# g_PageItemsRandom controls the items shown per page.
-	
+
 	# If date was selected, show strip
 	if g_Args_Year and g_Args_Month and g_Args_Day:
 		date=datetime.date(int(g_Args_Year),int(g_Args_Month),int(g_Args_Day))
 		show_image(date)
 		return
-		
+
 	# Handle a cache, as otherwise after showing a strip and coming back the list would be refreshed.
 	datelist=[]
 	if get_cacheddata(g_cachemodefile)=='random':
@@ -210,7 +209,7 @@ def select_random(date,fanart_image):
 	else:
 		datelist=create_randomdatelist(g_PageItemsRandom)
 		pickle.dump(datelist,open(g_CacheDir+g_cacherandomdates,"wb"))
-		
+
 	# create directory items for random dates
 	for i in range(0,len(datelist)):
 		random_date = datelist[i]
@@ -224,13 +223,15 @@ def create_randomdatelist(number):
 		random_date = create_random_date(g_FirstDilbert, g_Now)
 		datelist.append(random_date)
 	return datelist
-		
+
 def select_browse(fanart_image):
 	# This function builds the folder structure for browsing by date.
 	# Due to time needed for scraping, the comic strip URL is scraped on selection and no thumbnails are shown. This prevents unfortunately browsing with the arrow keys...
 	if g_Args_Day:
 		date=datetime.date(int(g_Args_Year),int(g_Args_Month),int(g_Args_Day))
 		show_image(date)
+		return
+
 	elif g_Args_Month:
 		day_range_end = g_Now.day+1 if (int(g_Args_Year) == g_Now.year and int(g_Args_Month) == g_Now.month) else monthrange(int(g_Args_Year),int(g_Args_Month))[1]+1
 		day_range_start = 16 if (int(g_Args_Year) == 1989 and int(g_Args_Month) == 4) else 1
@@ -292,13 +293,13 @@ def show_image(date):
 		return False
 
 def cache_mode():
-	# Handle last mode for random cache handling
-	if g_Args_Mode:	
+	# Cache last mode for handling the datelist cache of the random function
+	if g_Args_Mode:
 		set_cacheddata(g_Args_Mode[0],g_cachemodefile)
 	else:
 		delete_cachefile(g_cachemodefile)
 	return True
-	
+
 ### Main program start ###
 
 # Check for Cache
