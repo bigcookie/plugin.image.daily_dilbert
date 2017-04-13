@@ -87,16 +87,16 @@ def get_cacheddata(filename):
 		try:
 			with open(cache_file, "r") as file:
 				data=file.read()
+			return data
 		except:
 			return ""
-		return data
 	else:
 		return ""
 
 def set_cacheddata(param,filename):
 	# Writes a data to the cache directory
 	# filename: lastmode(lastpage)
-	cache_file=os.path.join(g_CacheDir + filename)
+	cache_file=os.path.join(g_CacheDir, filename)
 	try:
 		with open(cache_file, "w") as file:
 			file.write(param)
