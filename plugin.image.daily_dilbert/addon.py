@@ -66,7 +66,7 @@ def build_url(query):
 def add_directory(mode=None,year='',month='',day='', page='',name='',icon='',fanart=''):
 	url = build_url({'mode': mode, 'foldername': name, 'page': page, 'year': year, 'month': month, 'day': day})
 	li = xbmcgui.ListItem(name)
-	li.setIconImage(icon)
+	li.setArt({'icon':icon,'fanart':fanart})
 	xbmcplugin.addDirectoryItem(handle=g_AddonHandle, url=url, listitem=li, isFolder=True)
 
 def read_cache(date):
